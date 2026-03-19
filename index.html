@@ -9,7 +9,6 @@
             --phone-bg-color: #5d34a4;
             --cell-bg-color: #f1f1f1;
             --main-font: sans-serif;
-            /* Новий, трохи менший розмір дротика */
             --dart-width: 120px; 
             --dart-height: 240px;
         }
@@ -17,7 +16,6 @@
         body {
             margin: 0;
             padding: 0;
-            /* Нативний фон на весь екран */
             background-color: var(--phone-bg-color);
             background-image: linear-gradient(to bottom, #7a5ac1, var(--phone-bg-color), #402371);
             display: flex;
@@ -25,32 +23,30 @@
             align-items: center;
             min-height: 100vh;
             font-family: var(--main-font);
-            overflow: hidden; /* Щоб не було скролу на телефоні */
+            overflow: hidden; 
         }
 
-        /* Тепер це основний контейнер гри на весь екран */
         .game-screen {
             width: 100%;
             height: 100vh;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             color: white;
             position: relative;
         }
 
-        /* Status Bar and Dynamic Island - прибрано, оскільки дивимось на телефоні */
-
-        /* Game Grid */
+        /* Grid - займає 65% екрана */
         .grid-container {
-            flex-grow: 1;
-            padding: 20px; /* Зменшено падінг зверху */
+            height: 65vh;
+            padding: 20px 20px 0 20px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(4, 1fr);
             gap: 10px;
             position: relative;
             z-index: 5;
-            transition: opacity 1s ease-out;
+            box-sizing: border-box;
         }
 
         .cell {
@@ -60,9 +56,8 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            overflow: visible;
             border: 1px solid #ddd;
-            transition: opacity 1s ease-out, background-color 1s ease-out, border 1s ease-out;
+            transition: opacity 1s ease-out;
         }
 
         .cell img {
@@ -72,40 +67,39 @@
             transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Balloons */
         .balloon {
-            width: 80%;
-            height: 80%;
+            width: 70%;
+            height: 70%;
             border-radius: 50%;
             box-shadow: inset -5px -10px 15px rgba(0,0,0,0.2), inset 5px 10px 15px rgba(255,255,255,0.2);
             position: relative;
-            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
         }
+
         .balloon::after {
             content: '';
             position: absolute;
-            bottom: -15px;
+            bottom: -12px;
             left: 50%;
-            transform: translateX(-50%);
             width: 2px;
-            height: 15px;
-            background-color: #888;
+            height: 12px;
+            background-color: rgba(255,255,255,0.4);
         }
+
         .balloon-popped {
             animation: balloon-pop 0.3s forwards;
         }
+
         @keyframes balloon-pop {
             0% { transform: scale(1); opacity: 1; }
             100% { transform: scale(0); opacity: 0; }
         }
 
-        /* Dart Area */
+        /* Нижня зона */
         .dart-area {
-            height: 30vh; /* Висота зони дротика у процентах від екрану */
+            height: 30vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding-bottom: 20px;
             z-index: 100;
             position: relative;
         }
@@ -116,117 +110,59 @@
             background: none;
             border: none;
             cursor: pointer;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            outline: none;
+            z-index: 101;
             transition: transform 0.2s;
-            /* Дротик видно одразу, він трохи піднятий */
-            transform: translateY(0px); 
-            opacity: 1;
-        }
-        
-        .dart-button:hover {
-            /* Ефект при наведенні (для десктопа) */
-            transform: scale(1.05);
         }
 
-        /* Realistic Dart flying animation */
+        /* Клас для анімації польоту */
         .dart-flying {
-            position: absolute !important;
-            transition: 
-                top 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95), 
-                left 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95), 
-                transform 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95),
-                margin-top 1.2s cubic-bezier(0.33, 1, 0.68, 1); 
+            position: fixed !important; /* Фіксуємо відносно вікна */
             pointer-events: none;
-            z-index: 110;
+            z-index: 1000;
+            transition: 
+                top 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                left 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Zoom and Fireworks States */
-        .bg-vanish {
-            /* При виграші фон стає темнішим */
-            background: #111 !important;
-        }
-        .hide-non-target {
-            opacity: 0 !important;
-            pointer-events: none;
-        }
-        .transparent-cell {
-            background-color: transparent !important;
-            border-color: transparent !important;
-        }
-        
-        /* Fireworks Layer */
+        .bg-vanish { background: #111 !important; }
+        .hide-non-target { opacity: 0 !important; pointer-events: none; }
+        .transparent-cell { background-color: transparent !important; border-color: transparent !important; }
+
         #fireworks-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 15;
-            display: none;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        
-        .particle {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            animation: explode 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        
-        @keyframes explode {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            70% { opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 15; display: none; pointer-events: none; overflow: hidden;
         }
 
+        .particle {
+            position: absolute; width: 6px; height: 6px; border-radius: 50%;
+            animation: explode 1.5s forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
     </style>
 </head>
 <body>
     <div class="game-screen" id="gameScreen">
         <div id="fireworks-container"></div>
-
-        <div class="grid-container" id="gameGrid">
-            </div>
-
-        <div class="dart-area">
+        <div class="grid-container" id="gameGrid"></div>
+        <div class="dart-area" id="dartArea">
             <button class="dart-button" id="dartButton">
-                <svg viewBox="0 0 100 160" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 100 160" width="100%" height="100%">
                     <defs>
-                        <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#999"/>
-                            <stop offset="50%" stop-color="#eee"/>
-                            <stop offset="100%" stop-color="#666"/>
-                        </linearGradient>
-                        <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#B8860B"/>
-                            <stop offset="50%" stop-color="#FFD700"/>
-                            <stop offset="100%" stop-color="#DAA520"/>
-                        </linearGradient>
-                        <linearGradient id="greenShaft" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#2E7D32"/>
-                            <stop offset="50%" stop-color="#4CAF50"/>
-                            <stop offset="100%" stop-color="#1B5E20"/>
-                        </linearGradient>
+                        <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#999"/><stop offset="50%" stop-color="#eee"/><stop offset="100%" stop-color="#666"/></linearGradient>
+                        <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#B8860B"/><stop offset="50%" stop-color="#FFD700"/><stop offset="100%" stop-color="#DAA520"/></linearGradient>
+                        <linearGradient id="greenShaft" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#2E7D32"/><stop offset="50%" stop-color="#4CAF50"/><stop offset="100%" stop-color="#1B5E20"/></linearGradient>
                     </defs>
-                    
                     <polygon points="50,5 45,45 55,45" fill="url(#metal)" />
-                    
                     <path d="M43,45 L57,45 L55,75 L45,75 Z" fill="url(#gold)" />
-                    <line x1="44" y1="52" x2="56" y2="52" stroke="#8B6508" stroke-width="1"/>
-                    <line x1="44" y1="60" x2="56" y2="60" stroke="#8B6508" stroke-width="1"/>
-                    <line x1="45" y1="68" x2="55" y2="68" stroke="#8B6508" stroke-width="1"/>
-                    
                     <rect x="46" y="75" width="8" height="35" fill="url(#greenShaft)" />
-                    
-                    <path d="M50,90 Q15,115 15,145 L50,150 Z" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
-                    <path d="M50,90 Q85,115 85,145 L50,150 Z" fill="#388E3C" stroke="#1B5E20" stroke-width="1"/>
-                    <polygon points="48,90 52,90 52,150 48,150" fill="#81C784" />
+                    <path d="M50,90 Q15,115 15,145 L50,150 Z" fill="#4CAF50" />
+                    <path d="M50,90 Q85,115 85,145 L50,150 Z" fill="#388E3C" />
                 </svg>
             </button>
         </div>
@@ -236,7 +172,6 @@
         const grid = document.getElementById('gameGrid');
         const dartButton = document.getElementById('dartButton');
         const gameScreen = document.getElementById('gameScreen');
-        const fireworksContainer = document.getElementById('fireworks-container');
         
         const phoneImages = [
             'https://i.postimg.cc/fbNDHzXZ/1c0dd0b347cccb3ca6b426e9e60f4f3a-removebg-preview-(2).png',
@@ -244,238 +179,133 @@
             'https://i.postimg.cc/ZqHtVr4r/9bb2ec7b0ba9bdffb8a94326146ca43d-removebg-preview-(1).png',
             'https://i.postimg.cc/t4dL4hZX/5fca03e6e1b68bcfda3b24c07e3542a9-removebg-preview-(1).png',
             'https://i.postimg.cc/qqCFVnHT/23df9839c3ce2f95f716a892261039fa-removebg-preview-(2).png',
-            'https://i.postimg.cc/hPVSVQzY/a0c131bef843db23652f8c71ce54520d-removebg-preview-(1).png' // 17 Pro Max
+            'https://i.postimg.cc/hPVSVQzY/a0c131bef843db23652f8c71ce54520d-removebg-preview-(1).png'
         ];
-        const targetPhoneSrc = phoneImages[phoneImages.length - 1];
-        
+        const targetPhoneSrc = phoneImages[5];
         const balloonColors = ['magenta', 'limegreen', 'deepskyblue', 'blueviolet', 'gold', 'red'];
         
         let throwCount = 0;
-        let unpoppedBalloonsIndices = [];
-        let fireworksInterval;
-
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
+        let unpoppedBalloons = [];
 
         function initGrid() {
-            let gridContent = [];
-            
-            phoneImages.forEach((src) => {
-                gridContent.push({ type: 'phone', src: src });
-            });
-            
-            balloonColors.forEach(color => {
-                gridContent.push({ type: 'balloon', color: color });
-            });
-            
-            shuffle(gridContent);
-            
-            gridContent.forEach((item, index) => {
+            let items = phoneImages.map(src => ({ type: 'phone', src }));
+            balloonColors.forEach(color => items.push({ type: 'balloon', color }));
+            items.sort(() => Math.random() - 0.5);
+
+            items.forEach((item, i) => {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                cell.id = `cell-${index}`;
-                
+                cell.id = `cell-${i}`;
                 if (item.type === 'phone') {
                     const img = document.createElement('img');
                     img.src = item.src;
                     cell.appendChild(img);
-                    
-                    if (item.src === targetPhoneSrc) {
-                        cell.classList.add('target-cell');
-                    }
+                    if (item.src === targetPhoneSrc) cell.classList.add('target-cell');
                 } else {
-                    const balloon = document.createElement('div');
-                    balloon.className = 'balloon';
-                    balloon.style.backgroundColor = item.color;
-                    balloon.id = `balloon-${index}`;
-                    cell.appendChild(balloon);
-                    unpoppedBalloonsIndices.push(index);
+                    const b = document.createElement('div');
+                    b.className = 'balloon';
+                    b.style.backgroundColor = item.color;
+                    cell.appendChild(b);
+                    unpoppedBalloons.push(i);
                 }
-                
                 grid.appendChild(cell);
             });
         }
 
-        function resetDart() {
-            dartButton.style.opacity = 1;
-            dartButton.style.pointerEvents = 'auto';
-            dartButton.style.position = '';
-            dartButton.style.top = '';
-            dartButton.style.left = '';
-            dartButton.style.transform = '';
-            dartButton.style.marginTop = '0px';
-            dartButton.classList.remove('dart-flying');
-        }
-
-        function throwDart(targetX, targetY, targetCellId, onArrival) {
-            dartButton.style.pointerEvents = 'none';
+        function throwDart(targetCell, callback) {
+            const rect = dartButton.getBoundingClientRect();
+            const targetRect = targetCell.getBoundingClientRect();
             
-            const dartRect = dartButton.getBoundingClientRect();
-            // Поточний розмір дротика
-            const actualDartWidth = 120;
-            const actualDartHeight = 240;
-
-            const startX = dartRect.left + actualDartWidth / 2;
-            const startY = dartRect.top + actualDartHeight / 2;
-            const screenRect = gameScreen.getBoundingClientRect();
-
+            // Фіксуємо початкову позицію
+            dartButton.style.left = rect.left + 'px';
+            dartButton.style.top = rect.top + 'px';
             dartButton.classList.add('dart-flying');
-            dartButton.style.position = 'absolute';
-            // Початкова позиція відносно всього екрану
-            dartButton.style.left = `${startX - screenRect.left - actualDartWidth/2}px`;
-            dartButton.style.top = `${startY - screenRect.top - actualDartHeight/2}px`;
-            dartButton.style.transform = 'translateY(0px)';
 
+            // Розраховуємо центр цілі
+            const targetX = targetRect.left + (targetRect.width / 2) - (rect.width / 2);
+            const targetY = targetRect.top + (targetRect.height / 2) - (rect.height / 2);
+
+            // Запускаємо політ через мікропаузу
             setTimeout(() => {
-                // Політ до цілі
-                dartButton.style.left = `${targetX - screenRect.left - actualDartWidth/2}px`;
-                dartButton.style.top = `${targetY - screenRect.top - actualDartHeight/2}px`;
+                dartButton.style.left = targetX + 'px';
+                dartButton.style.top = targetY + 'px';
+                dartButton.style.transform = 'scale(0.2) rotate(10deg)';
                 
-                dartButton.style.marginTop = '-100px'; 
-                
-                // Зменшення (ефект віддалення) та нахил. Скориговано scale для меншого дротика
-                dartButton.style.transform = 'scale(0.18) rotate(15deg)';
-
                 setTimeout(() => {
-                    dartButton.style.marginTop = '0px';
+                    callback();
+                    if (throwCount < 3) resetDart();
                 }, 800);
-
-                setTimeout(() => {
-                    onArrival(targetCellId);
-                }, 1200);
-            }, 20);
+            }, 10);
         }
 
-        function onBalloonPopArrival(targetCellId) {
-            const cell = document.getElementById(targetCellId);
-            const balloon = cell.querySelector('.balloon');
-            
-            if (balloon) {
-                balloon.classList.add('balloon-popped');
-                
-                setTimeout(() => {
-                    cell.innerHTML = '';
-                    unpoppedBalloonsIndices = unpoppedBalloonsIndices.filter(id => id !== parseInt(targetCellId.split('-')[1]));
-                    resetDart();
-                }, 300);
-            } else {
-                resetDart();
-            }
-        }
-
-        function onTargetArrival(targetCellId) {
-            dartButton.style.opacity = 0; 
-            
-            const targetCell = document.getElementById(targetCellId);
-            const targetImg = targetCell.querySelector('img');
-            const allCells = document.querySelectorAll('.cell');
-
-            targetCell.style.zIndex = '50';
-            
-            const cellRect = targetCell.getBoundingClientRect();
-            const screenRect = gameScreen.getBoundingClientRect();
-            
-            const screenCenterX = screenRect.left + screenRect.width / 2;
-            const screenCenterY = screenRect.top + screenRect.height / 2;
-            
-            const cellCenterX = cellRect.left + cellRect.width / 2;
-            const cellCenterY = cellRect.top + cellRect.height / 2;
-            
-            const moveX = screenCenterX - cellCenterX;
-            const moveY = screenCenterY - cellCenterY;
-
-            gameScreen.classList.add('bg-vanish');
-            
-            allCells.forEach(cell => {
-                if(cell.id !== targetCellId) {
-                    cell.classList.add('hide-non-target');
-                } else {
-                    cell.classList.add('transparent-cell');
-                }
-            });
-
-            setTimeout(() => {
-                fireworksContainer.style.display = 'block';
-                targetImg.style.transform = `translate(${moveX}px, ${moveY}px) scale(3.5)`;
-                
-                startFireworks();
-            }, 300);
-        }
-
-        function createFirework() {
-            const burst = document.createElement('div');
-            burst.style.position = 'absolute';
-            burst.style.top = `${10 + Math.random() * 60}%`;
-            burst.style.left = `${10 + Math.random() * 80}%`;
-            fireworksContainer.appendChild(burst);
-
-            const colors = ['#ff0000', '#ffd700', '#00ffff', '#00ff00', '#ff00ff', '#ffffff', '#ff6600'];
-            const burstColor = colors[Math.floor(Math.random() * colors.length)];
-            const particleCount = 20 + Math.floor(Math.random() * 20);
-
-            for(let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.backgroundColor = burstColor;
-                
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 40 + Math.random() * 100;
-                
-                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
-                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
-                
-                burst.appendChild(particle);
-            }
-
-            setTimeout(() => {
-                if(burst.parentNode) burst.parentNode.removeChild(burst);
-            }, 1600);
-        }
-
-        function startFireworks() {
-            for(let i=0; i<6; i++) {
-                setTimeout(createFirework, i * 200);
-            }
-            fireworksInterval = setInterval(createFirework, 400);
+        function resetDart() {
+            dartButton.classList.remove('dart-flying');
+            dartButton.style.left = '';
+            dartButton.style.top = '';
+            dartButton.style.transform = '';
+            dartButton.style.pointerEvents = 'auto';
         }
 
         dartButton.addEventListener('click', () => {
             throwCount++;
-            
+            dartButton.style.pointerEvents = 'none';
+
             if (throwCount <= 2) {
-                if (unpoppedBalloonsIndices.length === 0) return;
-                
-                const randomIndexInList = Math.floor(Math.random() * unpoppedBalloonsIndices.length);
-                const randomBalloonId = unpoppedBalloonsIndices[randomIndexInList];
-                const targetCellId = `cell-${randomBalloonId}`;
-                const cell = document.getElementById(targetCellId);
-                const cellRect = cell.getBoundingClientRect();
-                
-                const targetX = cellRect.left + cellRect.width / 2;
-                const targetY = cellRect.top + cellRect.height / 2;
-                
-                throwDart(targetX, targetY, targetCellId, onBalloonPopArrival);
-                
-            } else if (throwCount === 3) {
-                const targetCell = document.querySelector('.target-cell');
-                const cellRect = targetCell.getBoundingClientRect();
-                
-                const targetX = cellRect.left + cellRect.width / 2;
-                const targetY = cellRect.top + cellRect.height / 2;
-                
-                throwDart(targetX, targetY, targetCell.id, onTargetArrival);
-                
-                dartButton.style.pointerEvents = 'none';
-                dartButton.style.cursor = 'default';
+                const idx = unpoppedBalloons.splice(Math.floor(Math.random() * unpoppedBalloons.length), 1);
+                const cell = document.getElementById(`cell-${idx}`);
+                throwDart(cell, () => {
+                    const b = cell.querySelector('.balloon');
+                    if (b) b.classList.add('balloon-popped');
+                });
+            } else {
+                const cell = document.querySelector('.target-cell');
+                throwDart(cell, () => {
+                    showWin(cell);
+                });
             }
         });
 
-        initGrid();
+        function showWin(cell) {
+            dartButton.style.opacity = '0';
+            const img = cell.querySelector('img');
+            gameScreen.classList.add('bg-vanish');
+            document.querySelectorAll('.cell').forEach(c => {
+                if (c !== cell) c.classList.add('hide-non-target');
+                else c.classList.add('transparent-cell');
+            });
+            
+            const sRect = gameScreen.getBoundingClientRect();
+            const cRect = cell.getBoundingClientRect();
+            const moveX = (sRect.width/2) - (cRect.left + cRect.width/2);
+            const moveY = (sRect.height/2) - (cRect.top + cRect.height/2);
 
+            img.style.transform = `translate(${moveX}px, ${moveY}px) scale(3.5)`;
+            document.getElementById('fireworks-container').style.display = 'block';
+            setInterval(createFirework, 400);
+        }
+
+        function createFirework() {
+            const container = document.getElementById('fireworks-container');
+            const f = document.createElement('div');
+            f.style.position = 'absolute';
+            f.style.left = Math.random() * 100 + '%';
+            f.style.top = Math.random() * 60 + '%';
+            container.appendChild(f);
+            const colors = ['#ff0', '#f0f', '#0ff', '#fff'];
+            for(let i=0; i<20; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+                const a = Math.random() * Math.PI * 2;
+                const d = 50 + Math.random() * 80;
+                p.style.setProperty('--tx', Math.cos(a)*d + 'px');
+                p.style.setProperty('--ty', Math.sin(a)*d + 'px');
+                f.appendChild(p);
+            }
+            setTimeout(() => f.remove(), 1500);
+        }
+
+        initGrid();
     </script>
 </body>
 </html>
