@@ -2,70 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Phone Dart Challenge</title>
     <style>
         :root {
             --phone-bg-color: #5d34a4;
             --cell-bg-color: #f1f1f1;
             --main-font: sans-serif;
-            /* Початковий розмір дротика */
-            --dart-width: 180px; 
-            --dart-height: 360px;
+            /* Новий, трохи менший розмір дротика */
+            --dart-width: 120px; 
+            --dart-height: 240px;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background-color: #222;
+            /* Нативний фон на весь екран */
+            background-color: var(--phone-bg-color);
+            background-image: linear-gradient(to bottom, #7a5ac1, var(--phone-bg-color), #402371);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             font-family: var(--main-font);
+            overflow: hidden; /* Щоб не було скролу на телефоні */
         }
 
-        .phone-frame {
-            width: 375px;
-            height: 812px;
-            background-image: linear-gradient(to bottom, #7a5ac1, var(--phone-bg-color), #402371);
-            border-radius: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            position: relative;
-            overflow: hidden;
+        /* Тепер це основний контейнер гри на весь екран */
+        .game-screen {
+            width: 100%;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             color: white;
-            transition: background 1.5s ease-out;
+            position: relative;
         }
 
-        /* Status Bar and Dynamic Island */
-        .status-bar {
-            height: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 25px 0 25px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 10;
-        }
-        .dynamic-island {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 30px;
-            background-color: black;
-            border-radius: 20px;
-            z-index: 9;
-        }
+        /* Status Bar and Dynamic Island - прибрано, оскільки дивимось на телефоні */
 
         /* Game Grid */
         .grid-container {
             flex-grow: 1;
-            padding: 60px 20px 20px 20px;
+            padding: 20px; /* Зменшено падінг зверху */
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(4, 1fr);
@@ -123,12 +101,13 @@
 
         /* Dart Area */
         .dart-area {
-            height: 250px; /* Збільшена зона під великий дротик */
+            height: 30vh; /* Висота зони дротика у процентах від екрану */
             display: flex;
             justify-content: center;
             align-items: center;
             padding-bottom: 20px;
             z-index: 100;
+            position: relative;
         }
 
         .dart-button {
@@ -143,11 +122,14 @@
             align-items: center;
             outline: none;
             transition: transform 0.2s;
-            transform: translateY(30px); /* Трохи опускаємо, щоб він гарно стояв */
+            /* Дротик видно одразу, він трохи піднятий */
+            transform: translateY(0px); 
+            opacity: 1;
         }
         
         .dart-button:hover {
-            transform: translateY(30px) scale(1.03);
+            /* Ефект при наведенні (для десктопа) */
+            transform: scale(1.05);
         }
 
         /* Realistic Dart flying animation */
@@ -164,6 +146,7 @@
 
         /* Zoom and Fireworks States */
         .bg-vanish {
+            /* При виграші фон стає темнішим */
             background: #111 !important;
         }
         .hide-non-target {
@@ -205,13 +188,7 @@
     </style>
 </head>
 <body>
-    <div class="phone-frame" id="phoneFrame">
-        <div class="status-bar">
-            <span>9:41</span>
-            <span style="font-size: 16px;">📶🔋</span>
-        </div>
-        <div class="dynamic-island"></div>
-
+    <div class="game-screen" id="gameScreen">
         <div id="fireworks-container"></div>
 
         <div class="grid-container" id="gameGrid">
@@ -258,7 +235,7 @@
     <script>
         const grid = document.getElementById('gameGrid');
         const dartButton = document.getElementById('dartButton');
-        const phoneFrame = document.getElementById('phoneFrame');
+        const gameScreen = document.getElementById('gameScreen');
         const fireworksContainer = document.getElementById('fireworks-container');
         
         const phoneImages = [
@@ -338,29 +315,30 @@
             dartButton.style.pointerEvents = 'none';
             
             const dartRect = dartButton.getBoundingClientRect();
-            // Нам потрібно скоригувати startX, startY, оскільки CSS transform змінює відображення
-            const actualDartWidth = 180;
-            const actualDartHeight = 360;
+            // Поточний розмір дротика
+            const actualDartWidth = 120;
+            const actualDartHeight = 240;
 
             const startX = dartRect.left + actualDartWidth / 2;
-            const startY = dartRect.top + actualDartHeight / 2 + 30; // +30 через translateY(30px)
-            const frameRect = phoneFrame.getBoundingClientRect();
+            const startY = dartRect.top + actualDartHeight / 2;
+            const screenRect = gameScreen.getBoundingClientRect();
 
             dartButton.classList.add('dart-flying');
             dartButton.style.position = 'absolute';
-            // Початкова позиція (відключаємо translateY)
-            dartButton.style.left = `${startX - frameRect.left - actualDartWidth/2}px`;
-            dartButton.style.top = `${startY - frameRect.top - actualDartHeight/2}px`;
+            // Початкова позиція відносно всього екрану
+            dartButton.style.left = `${startX - screenRect.left - actualDartWidth/2}px`;
+            dartButton.style.top = `${startY - screenRect.top - actualDartHeight/2}px`;
             dartButton.style.transform = 'translateY(0px)';
 
             setTimeout(() => {
-                dartButton.style.left = `${targetX - frameRect.left - actualDartWidth/2}px`;
-                dartButton.style.top = `${targetY - frameRect.top - actualDartHeight/2}px`;
+                // Політ до цілі
+                dartButton.style.left = `${targetX - screenRect.left - actualDartWidth/2}px`;
+                dartButton.style.top = `${targetY - screenRect.top - actualDartHeight/2}px`;
                 
                 dartButton.style.marginTop = '-100px'; 
                 
-                // Сильніше зменшуємо в кінці, бо він початково гігантський (scale з 1 до 0.12)
-                dartButton.style.transform = 'scale(0.12) rotate(15deg)';
+                // Зменшення (ефект віддалення) та нахил. Скориговано scale для меншого дротика
+                dartButton.style.transform = 'scale(0.18) rotate(15deg)';
 
                 setTimeout(() => {
                     dartButton.style.marginTop = '0px';
@@ -395,26 +373,22 @@
             const targetCell = document.getElementById(targetCellId);
             const targetImg = targetCell.querySelector('img');
             const allCells = document.querySelectorAll('.cell');
-            const statusBar = document.querySelector('.status-bar');
-            const dynamicIsland = document.querySelector('.dynamic-island');
 
             targetCell.style.zIndex = '50';
             
             const cellRect = targetCell.getBoundingClientRect();
-            const frameRect = phoneFrame.getBoundingClientRect();
+            const screenRect = gameScreen.getBoundingClientRect();
             
-            const frameCenterX = frameRect.left + frameRect.width / 2;
-            const frameCenterY = frameRect.top + frameRect.height / 2;
+            const screenCenterX = screenRect.left + screenRect.width / 2;
+            const screenCenterY = screenRect.top + screenRect.height / 2;
             
             const cellCenterX = cellRect.left + cellRect.width / 2;
             const cellCenterY = cellRect.top + cellRect.height / 2;
             
-            const moveX = frameCenterX - cellCenterX;
-            const moveY = frameCenterY - cellCenterY;
+            const moveX = screenCenterX - cellCenterX;
+            const moveY = screenCenterY - cellCenterY;
 
-            phoneFrame.classList.add('bg-vanish');
-            statusBar.classList.add('hide-non-target');
-            dynamicIsland.classList.add('hide-non-target');
+            gameScreen.classList.add('bg-vanish');
             
             allCells.forEach(cell => {
                 if(cell.id !== targetCellId) {
