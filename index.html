@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Dart Challenge</title>
+    <style>
+        :root {
+            --phone-bg-color: #5d34a4;
+            --cell-bg-color: #f1f1f1;
+            --main-font: sans-serif;
+            /* Початковий розмір дротика */
+            --dart-width: 180px; 
+            --dart-height: 360px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: var(--main-font);
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background-image: linear-gradient(to bottom, #7a5ac1, var(--phone-bg-color), #402371);
+            border-radius: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: white;
+            transition: background 1.5s ease-out;
+        }
+
+        /* Status Bar and Dynamic Island */
+        .status-bar {
+            height: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 25px 0 25px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .dynamic-island {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 30px;
+            background-color: black;
+            border-radius: 20px;
+            z-index: 9;
+        }
+
+        /* Game Grid */
+        .grid-container {
+            flex-grow: 1;
+            padding: 60px 20px 20px 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            position: relative;
+            z-index: 5;
+            transition: opacity 1s ease-out;
+        }
+
+        .cell {
+            background-color: var(--cell-bg-color);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: visible;
+            border: 1px solid #ddd;
+            transition: opacity 1s ease-out, background-color 1s ease-out, border 1s ease-out;
+        }
+
+        .cell img {
+            max-width: 85%;
+            max-height: 85%;
+            object-fit: contain;
+            transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Balloons */
+        .balloon {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            box-shadow: inset -5px -10px 15px rgba(0,0,0,0.2), inset 5px 10px 15px rgba(255,255,255,0.2);
+            position: relative;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        }
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 15px;
+            background-color: #888;
+        }
+        .balloon-popped {
+            animation: balloon-pop 0.3s forwards;
+        }
+        @keyframes balloon-pop {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Dart Area */
+        .dart-area {
+            height: 250px; /* Збільшена зона під великий дротик */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 20px;
+            z-index: 100;
+        }
+
+        .dart-button {
+            width: var(--dart-width);
+            height: var(--dart-height);
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            outline: none;
+            transition: transform 0.2s;
+            transform: translateY(30px); /* Трохи опускаємо, щоб він гарно стояв */
+        }
+        
+        .dart-button:hover {
+            transform: translateY(30px) scale(1.03);
+        }
+
+        /* Realistic Dart flying animation */
+        .dart-flying {
+            position: absolute !important;
+            transition: 
+                top 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95), 
+                left 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95), 
+                transform 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95),
+                margin-top 1.2s cubic-bezier(0.33, 1, 0.68, 1); 
+            pointer-events: none;
+            z-index: 110;
+        }
+
+        /* Zoom and Fireworks States */
+        .bg-vanish {
+            background: #111 !important;
+        }
+        .hide-non-target {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+        .transparent-cell {
+            background-color: transparent !important;
+            border-color: transparent !important;
+        }
+        
+        /* Fireworks Layer */
+        #fireworks-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 15;
+            display: none;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: explode 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        
+        @keyframes explode {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            70% { opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="phone-frame" id="phoneFrame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <span style="font-size: 16px;">📶🔋</span>
+        </div>
+        <div class="dynamic-island"></div>
+
+        <div id="fireworks-container"></div>
+
+        <div class="grid-container" id="gameGrid">
+            </div>
+
+        <div class="dart-area">
+            <button class="dart-button" id="dartButton">
+                <svg viewBox="0 0 100 160" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#999"/>
+                            <stop offset="50%" stop-color="#eee"/>
+                            <stop offset="100%" stop-color="#666"/>
+                        </linearGradient>
+                        <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#B8860B"/>
+                            <stop offset="50%" stop-color="#FFD700"/>
+                            <stop offset="100%" stop-color="#DAA520"/>
+                        </linearGradient>
+                        <linearGradient id="greenShaft" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#2E7D32"/>
+                            <stop offset="50%" stop-color="#4CAF50"/>
+                            <stop offset="100%" stop-color="#1B5E20"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <polygon points="50,5 45,45 55,45" fill="url(#metal)" />
+                    
+                    <path d="M43,45 L57,45 L55,75 L45,75 Z" fill="url(#gold)" />
+                    <line x1="44" y1="52" x2="56" y2="52" stroke="#8B6508" stroke-width="1"/>
+                    <line x1="44" y1="60" x2="56" y2="60" stroke="#8B6508" stroke-width="1"/>
+                    <line x1="45" y1="68" x2="55" y2="68" stroke="#8B6508" stroke-width="1"/>
+                    
+                    <rect x="46" y="75" width="8" height="35" fill="url(#greenShaft)" />
+                    
+                    <path d="M50,90 Q15,115 15,145 L50,150 Z" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+                    <path d="M50,90 Q85,115 85,145 L50,150 Z" fill="#388E3C" stroke="#1B5E20" stroke-width="1"/>
+                    <polygon points="48,90 52,90 52,150 48,150" fill="#81C784" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('gameGrid');
+        const dartButton = document.getElementById('dartButton');
+        const phoneFrame = document.getElementById('phoneFrame');
+        const fireworksContainer = document.getElementById('fireworks-container');
+        
+        const phoneImages = [
+            'https://i.postimg.cc/fbNDHzXZ/1c0dd0b347cccb3ca6b426e9e60f4f3a-removebg-preview-(2).png',
+            'https://i.postimg.cc/yxkHJkqR/0f6051110b6e06306ccecb74a3968dc9-removebg-preview-(1).png',
+            'https://i.postimg.cc/ZqHtVr4r/9bb2ec7b0ba9bdffb8a94326146ca43d-removebg-preview-(1).png',
+            'https://i.postimg.cc/t4dL4hZX/5fca03e6e1b68bcfda3b24c07e3542a9-removebg-preview-(1).png',
+            'https://i.postimg.cc/qqCFVnHT/23df9839c3ce2f95f716a892261039fa-removebg-preview-(2).png',
+            'https://i.postimg.cc/hPVSVQzY/a0c131bef843db23652f8c71ce54520d-removebg-preview-(1).png' // 17 Pro Max
+        ];
+        const targetPhoneSrc = phoneImages[phoneImages.length - 1];
+        
+        const balloonColors = ['magenta', 'limegreen', 'deepskyblue', 'blueviolet', 'gold', 'red'];
+        
+        let throwCount = 0;
+        let unpoppedBalloonsIndices = [];
+        let fireworksInterval;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function initGrid() {
+            let gridContent = [];
+            
+            phoneImages.forEach((src) => {
+                gridContent.push({ type: 'phone', src: src });
+            });
+            
+            balloonColors.forEach(color => {
+                gridContent.push({ type: 'balloon', color: color });
+            });
+            
+            shuffle(gridContent);
+            
+            gridContent.forEach((item, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${index}`;
+                
+                if (item.type === 'phone') {
+                    const img = document.createElement('img');
+                    img.src = item.src;
+                    cell.appendChild(img);
+                    
+                    if (item.src === targetPhoneSrc) {
+                        cell.classList.add('target-cell');
+                    }
+                } else {
+                    const balloon = document.createElement('div');
+                    balloon.className = 'balloon';
+                    balloon.style.backgroundColor = item.color;
+                    balloon.id = `balloon-${index}`;
+                    cell.appendChild(balloon);
+                    unpoppedBalloonsIndices.push(index);
+                }
+                
+                grid.appendChild(cell);
+            });
+        }
+
+        function resetDart() {
+            dartButton.style.opacity = 1;
+            dartButton.style.pointerEvents = 'auto';
+            dartButton.style.position = '';
+            dartButton.style.top = '';
+            dartButton.style.left = '';
+            dartButton.style.transform = '';
+            dartButton.style.marginTop = '0px';
+            dartButton.classList.remove('dart-flying');
+        }
+
+        function throwDart(targetX, targetY, targetCellId, onArrival) {
+            dartButton.style.pointerEvents = 'none';
+            
+            const dartRect = dartButton.getBoundingClientRect();
+            // Нам потрібно скоригувати startX, startY, оскільки CSS transform змінює відображення
+            const actualDartWidth = 180;
+            const actualDartHeight = 360;
+
+            const startX = dartRect.left + actualDartWidth / 2;
+            const startY = dartRect.top + actualDartHeight / 2 + 30; // +30 через translateY(30px)
+            const frameRect = phoneFrame.getBoundingClientRect();
+
+            dartButton.classList.add('dart-flying');
+            dartButton.style.position = 'absolute';
+            // Початкова позиція (відключаємо translateY)
+            dartButton.style.left = `${startX - frameRect.left - actualDartWidth/2}px`;
+            dartButton.style.top = `${startY - frameRect.top - actualDartHeight/2}px`;
+            dartButton.style.transform = 'translateY(0px)';
+
+            setTimeout(() => {
+                dartButton.style.left = `${targetX - frameRect.left - actualDartWidth/2}px`;
+                dartButton.style.top = `${targetY - frameRect.top - actualDartHeight/2}px`;
+                
+                dartButton.style.marginTop = '-100px'; 
+                
+                // Сильніше зменшуємо в кінці, бо він початково гігантський (scale з 1 до 0.12)
+                dartButton.style.transform = 'scale(0.12) rotate(15deg)';
+
+                setTimeout(() => {
+                    dartButton.style.marginTop = '0px';
+                }, 800);
+
+                setTimeout(() => {
+                    onArrival(targetCellId);
+                }, 1200);
+            }, 20);
+        }
+
+        function onBalloonPopArrival(targetCellId) {
+            const cell = document.getElementById(targetCellId);
+            const balloon = cell.querySelector('.balloon');
+            
+            if (balloon) {
+                balloon.classList.add('balloon-popped');
+                
+                setTimeout(() => {
+                    cell.innerHTML = '';
+                    unpoppedBalloonsIndices = unpoppedBalloonsIndices.filter(id => id !== parseInt(targetCellId.split('-')[1]));
+                    resetDart();
+                }, 300);
+            } else {
+                resetDart();
+            }
+        }
+
+        function onTargetArrival(targetCellId) {
+            dartButton.style.opacity = 0; 
+            
+            const targetCell = document.getElementById(targetCellId);
+            const targetImg = targetCell.querySelector('img');
+            const allCells = document.querySelectorAll('.cell');
+            const statusBar = document.querySelector('.status-bar');
+            const dynamicIsland = document.querySelector('.dynamic-island');
+
+            targetCell.style.zIndex = '50';
+            
+            const cellRect = targetCell.getBoundingClientRect();
+            const frameRect = phoneFrame.getBoundingClientRect();
+            
+            const frameCenterX = frameRect.left + frameRect.width / 2;
+            const frameCenterY = frameRect.top + frameRect.height / 2;
+            
+            const cellCenterX = cellRect.left + cellRect.width / 2;
+            const cellCenterY = cellRect.top + cellRect.height / 2;
+            
+            const moveX = frameCenterX - cellCenterX;
+            const moveY = frameCenterY - cellCenterY;
+
+            phoneFrame.classList.add('bg-vanish');
+            statusBar.classList.add('hide-non-target');
+            dynamicIsland.classList.add('hide-non-target');
+            
+            allCells.forEach(cell => {
+                if(cell.id !== targetCellId) {
+                    cell.classList.add('hide-non-target');
+                } else {
+                    cell.classList.add('transparent-cell');
+                }
+            });
+
+            setTimeout(() => {
+                fireworksContainer.style.display = 'block';
+                targetImg.style.transform = `translate(${moveX}px, ${moveY}px) scale(3.5)`;
+                
+                startFireworks();
+            }, 300);
+        }
+
+        function createFirework() {
+            const burst = document.createElement('div');
+            burst.style.position = 'absolute';
+            burst.style.top = `${10 + Math.random() * 60}%`;
+            burst.style.left = `${10 + Math.random() * 80}%`;
+            fireworksContainer.appendChild(burst);
+
+            const colors = ['#ff0000', '#ffd700', '#00ffff', '#00ff00', '#ff00ff', '#ffffff', '#ff6600'];
+            const burstColor = colors[Math.floor(Math.random() * colors.length)];
+            const particleCount = 20 + Math.floor(Math.random() * 20);
+
+            for(let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.backgroundColor = burstColor;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 40 + Math.random() * 100;
+                
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                
+                burst.appendChild(particle);
+            }
+
+            setTimeout(() => {
+                if(burst.parentNode) burst.parentNode.removeChild(burst);
+            }, 1600);
+        }
+
+        function startFireworks() {
+            for(let i=0; i<6; i++) {
+                setTimeout(createFirework, i * 200);
+            }
+            fireworksInterval = setInterval(createFirework, 400);
+        }
+
+        dartButton.addEventListener('click', () => {
+            throwCount++;
+            
+            if (throwCount <= 2) {
+                if (unpoppedBalloonsIndices.length === 0) return;
+                
+                const randomIndexInList = Math.floor(Math.random() * unpoppedBalloonsIndices.length);
+                const randomBalloonId = unpoppedBalloonsIndices[randomIndexInList];
+                const targetCellId = `cell-${randomBalloonId}`;
+                const cell = document.getElementById(targetCellId);
+                const cellRect = cell.getBoundingClientRect();
+                
+                const targetX = cellRect.left + cellRect.width / 2;
+                const targetY = cellRect.top + cellRect.height / 2;
+                
+                throwDart(targetX, targetY, targetCellId, onBalloonPopArrival);
+                
+            } else if (throwCount === 3) {
+                const targetCell = document.querySelector('.target-cell');
+                const cellRect = targetCell.getBoundingClientRect();
+                
+                const targetX = cellRect.left + cellRect.width / 2;
+                const targetY = cellRect.top + cellRect.height / 2;
+                
+                throwDart(targetX, targetY, targetCell.id, onTargetArrival);
+                
+                dartButton.style.pointerEvents = 'none';
+                dartButton.style.cursor = 'default';
+            }
+        });
+
+        initGrid();
+
+    </script>
+</body>
+</html>
